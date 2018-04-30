@@ -9,6 +9,7 @@ import Data.Record.Builder (Builder, insert, passThrough)
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Variant (Variant, inj)
 import Type.Row (class RowLacks)
 
 foreign import kind Segment
@@ -17,7 +18,7 @@ foreign import data Literal :: Symbol -> Segment
 
 foreign import data Capture :: Symbol -> Type -> Segment
 
-data SegmentRouteError
+data SegmentError
     = LiteralError { expected :: String, actual :: String }
     | CaptureError { name :: String, message :: String, actual :: String }
 
@@ -41,9 +42,12 @@ class SegmentRouter
     | segment -> input output
     where
     segmentRouter
-        :: SegmentProxy segment
+        :: forall errors
+        .  SegmentProxy segment
         -> String
-        -> Either SegmentRouteError (Builder (Record input) (Record output))
+        -> Either
+            (Variant (segmentError :: SegmentError | errors))
+            (Builder (Record input) (Record output))
 
 instance segmentRouterLiteral :: IsSymbol literal =>
     SegmentRouter (Literal literal) input input where
@@ -52,7 +56,7 @@ instance segmentRouterLiteral :: IsSymbol literal =>
         in
         if expectedLiteral == actualLiteral
         then Right $ passThrough
-        else Left $ LiteralError
+        else Left $ inj (SProxy :: SProxy "segmentError") $ LiteralError $
         { expected: expectedLiteral
         , actual: actualLiteral
         }
@@ -66,7 +70,7 @@ instance segmentRouterCapture ::
     SegmentRouter (Capture name value) input output where
     segmentRouter _ segmentToCapture =
         fromSegment segmentToCapture # bimap
-            (\message -> CaptureError
+            (\message -> inj (SProxy :: SProxy "segmentError") $ CaptureError
                 { name: reflectSymbol (SProxy :: SProxy name)
                 , message: message
                 , actual: segmentToCapture
