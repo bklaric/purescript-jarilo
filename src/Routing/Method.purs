@@ -4,6 +4,7 @@ import Prelude
 
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
+import Data.Variant (SProxy(..), Variant, inj)
 
 foreign import kind Method
 
@@ -17,17 +18,22 @@ data MethodProxy (method :: Method) = MethodProxy
 
 newtype MethodError = MethodError { expected :: Method, actual :: Method }
 
-checkMethod :: Method -> Method -> Maybe MethodError
+checkMethod :: forall errors.
+    Method -> Method -> Maybe (Variant (methodError :: MethodError | errors))
 checkMethod expected actual =
     if expected == actual
     then Nothing
-    else Just $ MethodError
+    else Just $ inj (SProxy :: SProxy "methodError") $ MethodError
     { expected: expected
     , actual: actual
     }
 
 class MethodRouter (method :: Method) where
-    methodRouter :: MethodProxy method -> Method -> Maybe MethodError
+    methodRouter
+        :: forall errors
+        .  MethodProxy method
+        -> Method
+        -> Maybe (Variant (methodError :: MethodError | errors))
 
 instance methodRouterGet :: MethodRouter Get where
     methodRouter _ actual = checkMethod GET actual
