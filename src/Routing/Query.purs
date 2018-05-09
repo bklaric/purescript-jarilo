@@ -39,6 +39,21 @@ data QueryError
         , actualValue :: Value
         }
 
+parameterParseError :: forall parameterName errors. IsSymbol parameterName =>
+    SProxy parameterName
+    -> Value
+    -> String
+    -> Variant (queryError :: QueryError | errors)
+parameterParseError nameProxy actualValue errorMessage =
+    inj (SProxy :: SProxy "queryError") $ ParameterParseError
+    { parameterName: reflectSymbol nameProxy
+    , errorMessage: errorMessage
+    , actualValue: actualValue
+    }
+
+fromValue :: forall value. FromSegment value => Value -> Either String value
+fromValue = valueToString >>> fromSegment
+
 class QueryRouter (query :: Query) (input :: # Type) (output :: # Type)
     | query -> input output where
     queryRouter
@@ -47,7 +62,9 @@ class QueryRouter (query :: Query) (input :: # Type) (output :: # Type)
         -> QueryPairs Key Value
         -> Either
             (Variant (queryError :: QueryError | errors))
-            (Tuple (QueryPairs Key Value) (Builder (Record input) (Record output)))
+            (Tuple
+                (QueryPairs Key Value)
+                (Builder (Record input) (Record output)))
 
 instance queryRouterNoQuery :: QueryRouter NoQuery input input where
     queryRouter _ query = pure $ Tuple query passThrough
@@ -63,16 +80,13 @@ instance queryRouterOptional ::
         nameProxy = (SProxy :: SProxy name)
         newQuery = delete (keyFromString $ reflectSymbol nameProxy) query
         in do
-        keyBuilder <-
+        Tuple newQuery <$>
             case find (keyFromString $ reflectSymbol nameProxy) query of
             Nothing -> Right $ insert nameProxy Nothing
             Just (Tuple key Nothing) -> Right $ insert nameProxy Nothing
-            Just (Tuple key (Just value)) -> value # valueToString # fromSegment # bimap
-                ({ parameterName: reflectSymbol nameProxy, errorMessage: _, actualValue: value }
-                    >>> ParameterParseError
-                    >>> inj (SProxy :: SProxy "queryError"))
+            Just (Tuple key (Just value)) -> value # fromValue # bimap
+                (parameterParseError nameProxy value)
                 (Just >>> insert nameProxy)
-        pure $ Tuple newQuery keyBuilder
 
 instance queryRouterMandatory ::
     ( IsSymbol name
@@ -84,21 +98,18 @@ instance queryRouterMandatory ::
     queryRouter _ query = let
         nameProxy = (SProxy :: SProxy name)
         newQuery = delete (keyFromString $ reflectSymbol nameProxy) query
-        in do
-        keyBuilder <-
+        missingParameterError = Left
+            $ inj (SProxy :: SProxy "queryError")
+            $ MissingParameterError
+            { parameterName: reflectSymbol nameProxy, query: query }
+        in
+        Tuple newQuery <$>
             case find (keyFromString $ reflectSymbol nameProxy) query of
-            Nothing -> Left
-                $ inj (SProxy :: SProxy "queryError")
-                $ MissingParameterError { parameterName: reflectSymbol nameProxy, query: query }
-            Just (Tuple key Nothing) -> Left
-                $ inj (SProxy :: SProxy "queryError")
-                $ MissingParameterError { parameterName: reflectSymbol nameProxy, query: query }
-            Just (Tuple key (Just value)) -> value # valueToString # fromSegment # bimap
-                ({ parameterName: reflectSymbol nameProxy, errorMessage: _, actualValue: value }
-                    >>> ParameterParseError
-                    >>> inj (SProxy :: SProxy "queryError"))
+            Nothing -> missingParameterError
+            Just (Tuple key Nothing) -> missingParameterError
+            Just (Tuple key (Just value)) -> value # fromValue # bimap
+                (parameterParseError nameProxy value)
                 (insert nameProxy)
-        pure $ Tuple newQuery keyBuilder
 
 instance queryRouterQuery ::
     ( QueryRouter leftQuery input midput
