@@ -19,6 +19,8 @@ foreign import data NoQuery :: Query
 
 foreign import data Optional :: Symbol -> Type -> Query
 
+foreign import data Mandatory :: Symbol -> Type -> Query
+
 foreign import data Query :: Query -> Query -> Query
 
 infixr 9 type Query as :?
@@ -26,13 +28,17 @@ infixr 9 type Query as :?
 data QueryProxy (query :: Query) = QueryProxy
 
 data QueryError
-    = ExcessParametersError (StrMap String)
-    | MissingParameterError String (StrMap String)
+    = MissingParameterError
+        { parameterName :: String
+        , query :: StrMap String
+        }
     | ParameterParseError
-        { name :: String, message :: String, actual :: String }
+        { parameterName :: String
+        , errorMessage :: String
+        , actualValue :: String
+        }
 
-class QueryRouter
-    (query :: Query) (input :: # Type) (output :: # Type)
+class QueryRouter (query :: Query) (input :: # Type) (output :: # Type)
     | query -> input output where
     queryRouter
         :: forall errors
@@ -60,10 +66,33 @@ instance queryRouterOptional ::
             case lookup (reflectSymbol key) query of
             Nothing -> Right $ insert key Nothing
             Just value -> fromSegment value # bimap
-                ({ name: reflectSymbol key, message: _, actual: value }
+                ({ parameterName: reflectSymbol key, errorMessage: _, actualValue: value }
                     >>> ParameterParseError
                     >>> inj (SProxy :: SProxy "queryError"))
                 (Just >>> insert key)
+        pure $ Tuple newQuery keyBuilder
+
+instance queryRouterMandatory ::
+    ( IsSymbol name
+    , FromSegment result
+    , RowLacks name input
+    , RowCons name result input output
+    ) =>
+    QueryRouter (Mandatory name result) input output where
+    queryRouter _ query = let
+        key = (SProxy :: SProxy name)
+        newQuery = delete (reflectSymbol key) query
+        in do
+        keyBuilder <-
+            case lookup (reflectSymbol key) query of
+            Nothing -> Left
+                $ inj (SProxy :: SProxy "queryError")
+                $ MissingParameterError { parameterName: reflectSymbol key, query: query }
+            Just value -> fromSegment value # bimap
+                ({ parameterName: reflectSymbol key, errorMessage: _, actualValue: value }
+                    >>> ParameterParseError
+                    >>> inj (SProxy :: SProxy "queryError"))
+                (insert key)
         pure $ Tuple newQuery keyBuilder
 
 instance queryRouterQuery ::

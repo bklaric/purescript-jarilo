@@ -4,18 +4,18 @@ import Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Data.Either (Either)
+import Data.Either (Either, hush)
 import Data.HTTP.Method (Method(..))
 import Data.List ((:))
 import Data.List as List
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.StrMap (empty)
 import Data.String.NonEmpty (NonEmptyString)
-import Data.Variant (Variant)
+import Data.Variant (Variant, match)
 import Routing.Junction (type (:=), type (<||>), JunctionProxy(..), junctionRouter')
 import Routing.Method (Get, Post)
 import Routing.Path (type (:>), End)
-import Routing.Query (NoQuery, Optional)
+import Routing.Query (type (:?), Mandatory, NoQuery, Optional)
 import Routing.Route (Route, RouteErrors)
 import Routing.Segment (Capture, Literal)
 
@@ -23,7 +23,7 @@ type RegisterPlayer = Route Post (Literal "players" :> End) NoQuery
 
 type ViewPlayer = Route Get (Literal "players" :> Capture "nickname" NonEmptyString :> End) NoQuery
 
-type ViewPlayers = Route Get (Literal "players" :> End) (Optional "game" NonEmptyString)
+type ViewPlayers = Route Get (Literal "players" :> End) (Optional "game" NonEmptyString :? Mandatory "teamId" Int)
 
 type PlayerRoutes
     =    "registerPlayer" := RegisterPlayer
@@ -31,22 +31,30 @@ type PlayerRoutes
     <||> "viewPlayers"    := ViewPlayers
 
 junction :: forall t166.
-  Either
-    { viewPlayers :: Variant RouteErrors
-    , viewPlayer :: Variant RouteErrors
-    , registerPlayer :: Variant RouteErrors
-    }
-    (Variant
-       ( registerPlayer :: {}
-       , viewPlayer :: { nickname :: NonEmptyString
-                       }
-       , viewPlayers :: { game :: Maybe NonEmptyString
-                        }
-       | t166
-       )
-    )
+    Either
+        { viewPlayers :: Variant RouteErrors
+        , viewPlayer :: Variant RouteErrors
+        , registerPlayer :: Variant RouteErrors
+        }
+        (Variant
+            ( registerPlayer :: {}
+            , viewPlayer :: { nickname :: NonEmptyString }
+            , viewPlayers :: { teamId :: Int, game :: Maybe NonEmptyString }
+            | t166
+            )
+        )
 junction =
     junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) POST ("players" : List.Nil) empty
+
+wut :: String
+wut = case hush junction of
+    Nothing -> "nothing"
+    Just routeValues -> match
+        { registerPlayer: \{} -> "register player"
+        , viewPlayer: \{ nickname } -> "view player " <> show nickname
+        , viewPlayers: \{ teamId, game } -> "viewPlayers " <> show teamId <> " " <> show game
+        }
+        routeValues
 
 main :: forall e. Eff (console :: CONSOLE | e) Unit
 main = do
