@@ -7,11 +7,11 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method)
 import Data.List (List)
 import Data.Record.Builder (Builder, build, insert)
-import Data.StrMap (StrMap)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (SProxy(..), Variant, inj)
 import Routing.Route (class RouteRouter, RouteErrors, RouteProxy(RouteProxy), routeRouter, kind Route)
 import Type.Row (class RowLacks)
+import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 
 foreign import kind Junction
 
@@ -32,7 +32,7 @@ class JunctionRouter
         :: JunctionProxy junction
         -> Method
         -> List String
-        -> StrMap String
+        -> QueryPairs Key Value
         -> Either
             (Builder (Record start) (Record end))
             (Variant records)
@@ -72,7 +72,7 @@ junctionRouter'
     => JunctionProxy junction
     -> Method
     -> List String
-    -> StrMap String
+    -> QueryPairs Key Value
     -> Either (Record errors) (Variant results)
 junctionRouter' junctionProxy method path query =
     junctionRouter junctionProxy method path query

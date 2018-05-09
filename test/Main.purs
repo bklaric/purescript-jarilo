@@ -9,7 +9,6 @@ import Data.HTTP.Method (Method(..))
 import Data.List ((:))
 import Data.List as List
 import Data.Maybe (Maybe(..))
-import Data.StrMap (empty)
 import Data.String.NonEmpty (NonEmptyString)
 import Data.Variant (Variant, match)
 import Routing.Junction (type (:=), type (<||>), JunctionProxy(..), junctionRouter')
@@ -18,6 +17,7 @@ import Routing.Path (type (:>), End)
 import Routing.Query (type (:?), Mandatory, NoQuery, Optional)
 import Routing.Route (Route, RouteErrors)
 import Routing.Segment (Capture, Literal)
+import URI.Extra.QueryPairs (QueryPairs(..))
 
 type RegisterPlayer = Route Post (Literal "players" :> End) NoQuery
 
@@ -44,7 +44,7 @@ junction :: forall t166.
             )
         )
 junction =
-    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) POST ("players" : List.Nil) empty
+    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) POST ("players" : List.Nil) (QueryPairs [])
 
 wut :: String
 wut = case hush junction of

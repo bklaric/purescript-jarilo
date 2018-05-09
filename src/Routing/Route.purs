@@ -7,13 +7,13 @@ import Data.HTTP.Method (Method)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Record.Builder (build)
-import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant)
 import Routing.Method (class MethodRouter, MethodError, MethodProxy(MethodProxy), methodRouter, kind Method)
 import Routing.Path (class PathRouter, PathError, PathProxy(PathProxy), pathRouter, kind Path)
 import Routing.Query (class QueryRouter, QueryError, QueryProxy(QueryProxy), queryRouter, kind Query)
 import Routing.Segment (SegmentError)
+import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 
 foreign import kind Route
 
@@ -33,7 +33,7 @@ class RouteRouter (route :: Route) (fields :: # Type) | route -> fields where
         :: RouteProxy route
         -> Method
         -> List String
-        -> StrMap String
+        -> QueryPairs Key Value
         -> Either (Variant RouteErrors) (Record fields)
 
 instance routeRouterRoute ::
