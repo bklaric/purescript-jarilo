@@ -19,8 +19,15 @@ foreign import data Literal :: Symbol -> Segment
 foreign import data Capture :: Symbol -> Type -> Segment
 
 data SegmentError
-    = LiteralError { expected :: String, actual :: String }
-    | CaptureError { name :: String, message :: String, actual :: String }
+    = LiteralError
+        { expectedLiteral :: String
+        , actualLiteral :: String
+        }
+    | CaptureError
+        { segmentName :: String
+        , errorMessage :: String
+        , actualSegment :: String
+        }
 
 class FromSegment value where
     fromSegment :: String -> Either String value
@@ -57,8 +64,8 @@ instance segmentRouterLiteral :: IsSymbol literal =>
         if expectedLiteral == actualLiteral
         then Right $ passThrough
         else Left $ inj (SProxy :: SProxy "segmentError") $ LiteralError $
-        { expected: expectedLiteral
-        , actual: actualLiteral
+        { expectedLiteral: expectedLiteral
+        , actualLiteral: actualLiteral
         }
 
 instance segmentRouterCapture ::
@@ -71,8 +78,8 @@ instance segmentRouterCapture ::
     segmentRouter _ segmentToCapture =
         fromSegment segmentToCapture # bimap
             (\message -> inj (SProxy :: SProxy "segmentError") $ CaptureError
-                { name: reflectSymbol (SProxy :: SProxy name)
-                , message: message
-                , actual: segmentToCapture
+                { segmentName: reflectSymbol (SProxy :: SProxy name)
+                , errorMessage: message
+                , actualSegment: segmentToCapture
                 })
             (insert (SProxy :: SProxy name))

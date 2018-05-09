@@ -20,8 +20,8 @@ infixr 9 type Sub as :>
 data PathProxy (path :: Path) = PathProxy
 
 data PathError
-    = NotEndError String
-    | SegmentEndError String
+    = NotEndError { restOfPath :: String }
+    | SegmentEndError { expectedSegment :: String }
 
 type PathRouterErrors errors =
     ( pathError :: PathError
@@ -46,7 +46,7 @@ instance pathRouterEnd :: PathRouter End input input where
         Left
         $ inj (SProxy :: SProxy "pathError")
         $ NotEndError
-        $ intercalate "/" nonEmptyPath
+        $ { restOfPath: intercalate "/" nonEmptyPath }
 
 instance pathRouterSubLiteral ::
     ( IsSymbol literal
@@ -58,7 +58,7 @@ instance pathRouterSubLiteral ::
         Left
         $ inj (SProxy :: SProxy "pathError")
         $ SegmentEndError
-        $ reflectSymbol (SProxy :: SProxy literal)
+        $ { expectedSegment: reflectSymbol (SProxy :: SProxy literal) }
     pathRouter _ (segment : path) = do
         segmentBuilder :: Builder (Record input) (Record midput) <-
             segmentRouter
@@ -77,7 +77,7 @@ instance pathRouterSubCapture ::
         Left
         $ inj (SProxy :: SProxy "pathError")
         $ SegmentEndError
-        $ reflectSymbol (SProxy :: SProxy name)
+        $ { expectedSegment: reflectSymbol (SProxy :: SProxy name) }
     pathRouter _ (segment : path) = do
         segmentBuilder :: Builder (Record input) (Record midput) <-
             segmentRouter

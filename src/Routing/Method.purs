@@ -16,7 +16,10 @@ foreign import data Put :: Method
 
 data MethodProxy (method :: Method) = MethodProxy
 
-newtype MethodError = MethodError { expected :: Method, actual :: Method }
+newtype MethodError = MethodError
+    { expectedMethod :: Method
+    , actualMethod :: Method
+    }
 
 checkMethod :: forall errors.
     Method -> Method -> Maybe (Variant (methodError :: MethodError | errors))
@@ -24,8 +27,8 @@ checkMethod expected actual =
     if expected == actual
     then Nothing
     else Just $ inj (SProxy :: SProxy "methodError") $ MethodError
-    { expected: expected
-    , actual: actual
+    { expectedMethod: expected
+    , actualMethod: actual
     }
 
 class MethodRouter (method :: Method) where
