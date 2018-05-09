@@ -6,17 +6,22 @@ import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Record.Builder (Builder, insert, passThrough)
-import Data.StrMap (StrMap, delete, isEmpty, lookup)
+import Data.StrMap (StrMap, delete, lookup)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj)
 import Routing.Segment (class FromSegment, fromSegment)
 import Type.Row (class RowLacks)
 
 foreign import kind Query
 
-foreign import data Nil :: Query
+foreign import data NoQuery :: Query
 
-foreign import data Optional :: Symbol -> Type -> Query -> Query
+foreign import data Optional :: Symbol -> Type -> Query
+
+foreign import data Query :: Query -> Query -> Query
+
+infixr 9 type Query as :?
 
 data QueryProxy (query :: Query) = QueryProxy
 
@@ -35,29 +40,23 @@ class QueryRouter
         -> StrMap String
         -> Either
             (Variant (queryError :: QueryError | errors))
-            (Builder (Record input) (Record output))
+            (Tuple (StrMap String) (Builder (Record input) (Record output)))
 
-instance queryRouterNil :: QueryRouter Nil input input where
-    queryRouter _ query =
-        if isEmpty query
-        then Right $ passThrough
-        else Left
-            $ inj (SProxy :: SProxy "queryError")
-            $ ExcessParametersError query
+instance queryRouterNoQuery :: QueryRouter NoQuery input input where
+    queryRouter _ query = pure $ Tuple query passThrough
 
 instance queryRouterOptional ::
     ( IsSymbol name
     , FromSegment result
     , RowLacks name input
-    , RowCons name (Maybe result) input midput
-    , QueryRouter query midput output
+    , RowCons name (Maybe result) input output
     ) =>
-    QueryRouter (Optional name result query) input output where
+    QueryRouter (Optional name result) input output where
     queryRouter _ query = let
         key = (SProxy :: SProxy name)
         newQuery = delete (reflectSymbol key) query
         in do
-        keyBuilder :: Builder (Record input) (Record midput) <-
+        keyBuilder <-
             case lookup (reflectSymbol key) query of
             Nothing -> Right $ insert key Nothing
             Just value -> fromSegment value # bimap
@@ -65,6 +64,16 @@ instance queryRouterOptional ::
                     >>> ParameterParseError
                     >>> inj (SProxy :: SProxy "queryError"))
                 (Just >>> insert key)
-        queryBuilder :: Builder (Record midput) (Record output) <-
-            queryRouter (QueryProxy :: QueryProxy query) newQuery
-        pure $ keyBuilder >>> queryBuilder
+        pure $ Tuple newQuery keyBuilder
+
+instance queryRouterQuery ::
+    ( QueryRouter leftQuery input midput
+    , QueryRouter rightQuery midput output
+    ) => QueryRouter (Query leftQuery rightQuery) input output where
+    queryRouter _ query = let
+        leftQueryProxy = (QueryProxy :: QueryProxy leftQuery)
+        rightQueryProxy = (QueryProxy :: QueryProxy rightQuery)
+        in do
+        Tuple leftQuery leftBuilder <- queryRouter leftQueryProxy query
+        Tuple rightQuery rightBuilder <- queryRouter rightQueryProxy leftQuery
+        pure $ Tuple rightQuery $ leftBuilder >>> rightBuilder

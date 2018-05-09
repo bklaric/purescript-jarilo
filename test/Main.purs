@@ -15,15 +15,15 @@ import Data.Variant (Variant)
 import Routing.Junction (type (:=), type (<||>), JunctionProxy(..), junctionRouter')
 import Routing.Method (Get, Post)
 import Routing.Path (type (:>), End)
-import Routing.Query (Nil, Optional)
+import Routing.Query (NoQuery, Optional)
 import Routing.Route (Route, RouteErrors)
 import Routing.Segment (Capture, Literal)
 
-type RegisterPlayer = Route Post (Literal "players" :> End) Nil
+type RegisterPlayer = Route Post (Literal "players" :> End) NoQuery
 
-type ViewPlayer = Route Get (Literal "players" :> Capture "nickname" NonEmptyString :> End) Nil
+type ViewPlayer = Route Get (Literal "players" :> Capture "nickname" NonEmptyString :> End) NoQuery
 
-type ViewPlayers = Route Get (Literal "players" :> End) (Optional "game" NonEmptyString Nil)
+type ViewPlayers = Route Get (Literal "players" :> End) (Optional "game" NonEmptyString)
 
 type PlayerRoutes
     =    "registerPlayer" := RegisterPlayer

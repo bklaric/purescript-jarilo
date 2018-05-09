@@ -8,6 +8,7 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Record.Builder (build)
 import Data.StrMap (StrMap)
+import Data.Tuple (Tuple(..))
 import Data.Variant (Variant)
 import Routing.Method (class MethodRouter, MethodError, MethodProxy(MethodProxy), methodRouter, kind Method)
 import Routing.Path (class PathRouter, PathError, PathProxy(PathProxy), pathRouter, kind Path)
@@ -41,10 +42,14 @@ instance routeRouterRoute ::
     , QueryRouter query midput fields
     ) =>
     RouteRouter (Route method path query) fields where
-    routeRouter _ method path query =
-        case methodRouter (MethodProxy :: MethodProxy method) method of
+    routeRouter _ method path query = let
+        methodProxy = (MethodProxy :: MethodProxy method)
+        pathProxy = (PathProxy :: PathProxy path)
+        queryProxy = (QueryProxy :: QueryProxy query)
+        in
+        case methodRouter methodProxy method of
         Just methodError -> Left methodError
         Nothing -> do
-            pathBuilder <- pathRouter (PathProxy :: PathProxy path) path
-            queryBuilder <- queryRouter (QueryProxy :: QueryProxy query) query
+            pathBuilder <- pathRouter pathProxy path
+            Tuple _ queryBuilder <- queryRouter queryProxy query
             pure $ build (pathBuilder >>> queryBuilder) {}
