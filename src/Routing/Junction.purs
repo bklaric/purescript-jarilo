@@ -12,6 +12,7 @@ import Data.Variant (SProxy(..), Variant, inj)
 import Routing.Route (class RouteRouter, RouteErrors, RouteProxy(RouteProxy), routeRouter, kind Route)
 import Type.Row (class RowLacks)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
+import URI.Path.Segment (PathSegment)
 
 foreign import kind Junction
 
@@ -31,7 +32,7 @@ class JunctionRouter
     junctionRouter
         :: JunctionProxy junction
         -> Method
-        -> List String
+        -> List PathSegment
         -> QueryPairs Key Value
         -> Either
             (Builder (Record start) (Record end))
@@ -71,7 +72,7 @@ junctionRouter'
     .  JunctionRouter junction () errors results
     => JunctionProxy junction
     -> Method
-    -> List String
+    -> List PathSegment
     -> QueryPairs Key Value
     -> Either (Record errors) (Variant results)
 junctionRouter' junctionProxy method path query =

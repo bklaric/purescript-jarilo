@@ -3,11 +3,12 @@ module Routing.Path where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.List (List(..), intercalate, (:))
+import Data.List (List(Nil), (:))
 import Data.Record.Builder (Builder, passThrough)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
 import Routing.Segment (class SegmentRouter, Capture, Literal, SegmentError, SegmentProxy(..), segmentRouter, kind Segment)
+import URI.Path.Segment (PathSegment)
 
 foreign import kind Path
 
@@ -20,7 +21,7 @@ infixr 9 type Sub as :>
 data PathProxy (path :: Path) = PathProxy
 
 data PathError
-    = NotEndError { restOfPath :: String }
+    = NotEndError { restOfPath :: List PathSegment }
     | SegmentEndError { expectedSegment :: String }
 
 type PathRouterErrors errors =
@@ -35,7 +36,7 @@ class PathRouter
     pathRouter
         :: forall errors
         .  PathProxy path
-        -> List String
+        -> List PathSegment
         -> Either
             (Variant (PathRouterErrors errors))
             (Builder (Record input) (Record output))
@@ -46,7 +47,7 @@ instance pathRouterEnd :: PathRouter End input input where
         Left
         $ inj (SProxy :: SProxy "pathError")
         $ NotEndError
-        $ { restOfPath: intercalate "/" nonEmptyPath }
+        $ { restOfPath: nonEmptyPath }
 
 instance pathRouterSubLiteral ::
     ( IsSymbol literal

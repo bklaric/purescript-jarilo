@@ -14,6 +14,7 @@ import Routing.Path (class PathRouter, PathError, PathProxy(PathProxy), pathRout
 import Routing.Query (class QueryRouter, QueryError, QueryProxy(QueryProxy), queryRouter, kind Query)
 import Routing.Segment (SegmentError)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
+import URI.Path.Segment (PathSegment)
 
 foreign import kind Route
 
@@ -32,7 +33,7 @@ class RouteRouter (route :: Route) (fields :: # Type) | route -> fields where
     routeRouter
         :: RouteProxy route
         -> Method
-        -> List String
+        -> List PathSegment
         -> QueryPairs Key Value
         -> Either (Variant RouteErrors) (Record fields)
 
