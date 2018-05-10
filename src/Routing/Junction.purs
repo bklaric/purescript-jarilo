@@ -22,7 +22,7 @@ infixr 9 type NamedRoute as :=
 
 foreign import data Junction :: Junction -> Junction -> Junction
 
-infixr 8 type Junction as <||>
+infixr 8 type Junction as :<|>
 
 data JunctionProxy (junction :: Junction) = JunctionProxy
 

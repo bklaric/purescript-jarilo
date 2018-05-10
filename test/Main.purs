@@ -11,13 +11,14 @@ import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.Variant (Variant, match)
-import Routing.Junction (type (:=), type (<||>), JunctionProxy(..), junctionRouter')
+import Routing.Junction (type (:=), type (:<|>), JunctionProxy(..), junctionRouter')
 import Routing.Method (Get, Post)
 import Routing.Path (type (:>), End)
 import Routing.Query (type (:?), Mandatory, NoQuery, Optional)
 import Routing.Route (Route, RouteErrors)
 import Routing.Segment (Capture, Literal)
 import URI.Extra.QueryPairs (QueryPairs(..))
+import URI.Path.Segment (unsafeSegmentFromString)
 
 type RegisterPlayer = Route Post (Literal "players" :> End) NoQuery
 
@@ -27,8 +28,8 @@ type ViewPlayers = Route Get (Literal "players" :> End) (Optional "game" NonEmpt
 
 type PlayerRoutes
     =    "registerPlayer" := RegisterPlayer
-    <||> "viewPlayer"     := ViewPlayer
-    <||> "viewPlayers"    := ViewPlayers
+    :<|> "viewPlayer"     := ViewPlayer
+    :<|> "viewPlayers"    := ViewPlayers
 
 junction :: forall t166.
     Either
@@ -44,7 +45,7 @@ junction :: forall t166.
             )
         )
 junction =
-    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) POST ("players" : List.Nil) (QueryPairs [])
+    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) POST (unsafeSegmentFromString "players" : List.Nil) (QueryPairs [])
 
 wut :: String
 wut = case hush junction of
