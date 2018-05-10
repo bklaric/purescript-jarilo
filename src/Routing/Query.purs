@@ -9,7 +9,7 @@ import Data.Record.Builder (Builder, insert, passThrough)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(Tuple))
 import Data.Variant (Variant, inj)
-import Routing.Segment (class FromSegment, fromSegment)
+import Routing.FromComponent (class FromComponent, fromComponent)
 import Routing.Query.QueryPairs (delete, find)
 import Type.Row (class RowLacks)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value, keyFromString, valueToString)
@@ -51,8 +51,8 @@ parameterParseError nameProxy actualValue errorMessage =
     , actualValue: actualValue
     }
 
-fromValue :: forall value. FromSegment value => Value -> Either String value
-fromValue = valueToString >>> fromSegment
+fromValue :: forall value. FromComponent value => Value -> Either String value
+fromValue = valueToString >>> fromComponent
 
 class QueryRouter (query :: Query) (input :: # Type) (output :: # Type)
     | query -> input output where
@@ -71,7 +71,7 @@ instance queryRouterNoQuery :: QueryRouter NoQuery input input where
 
 instance queryRouterOptional ::
     ( IsSymbol name
-    , FromSegment result
+    , FromComponent result
     , RowLacks name input
     , RowCons name (Maybe result) input output
     ) =>
@@ -90,7 +90,7 @@ instance queryRouterOptional ::
 
 instance queryRouterMandatory ::
     ( IsSymbol name
-    , FromSegment result
+    , FromComponent result
     , RowLacks name input
     , RowCons name result input output
     ) =>

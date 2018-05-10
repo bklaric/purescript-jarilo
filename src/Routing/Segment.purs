@@ -3,13 +3,11 @@ module Routing.Segment where
 import Prelude
 
 import Data.Bifunctor (bimap)
-import Data.Either (Either(..), note)
-import Data.Int as Int
+import Data.Either (Either(Left, Right))
 import Data.Record.Builder (Builder, insert, passThrough)
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
+import Routing.FromComponent (class FromComponent, fromComponent)
 import Type.Row (class RowLacks)
 
 foreign import kind Segment
@@ -28,19 +26,6 @@ data SegmentError
         , errorMessage :: String
         , actualSegment :: String
         }
-
-class FromSegment value where
-    fromSegment :: String -> Either String value
-
-instance fromSegmentInt :: FromSegment Int where
-    fromSegment =
-        Int.fromString >>> note "Couldn't turn segment into an integer."
-
-instance fromSegmentString :: FromSegment String where
-    fromSegment = pure
-
-instance fromSegmentNonEmptyString :: FromSegment NonEmptyString where
-    fromSegment = NonEmptyString.fromString >>> note "Segment cannot be empty."
 
 data SegmentProxy (segment :: Segment) = SegmentProxy
 
@@ -72,11 +57,11 @@ instance segmentRouterCapture ::
     ( IsSymbol name
     , RowLacks name input
     , RowCons name value input output
-    , FromSegment value
+    , FromComponent value
     ) =>
     SegmentRouter (Capture name value) input output where
     segmentRouter _ segmentToCapture =
-        fromSegment segmentToCapture # bimap
+        fromComponent segmentToCapture # bimap
             (\message -> inj (SProxy :: SProxy "segmentError") $ CaptureError
                 { segmentName: reflectSymbol (SProxy :: SProxy name)
                 , errorMessage: message
