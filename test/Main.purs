@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Data.Either (Either, hush)
+import Data.Either (Either(..), hush)
 import Data.HTTP.Method (Method(..))
 import Data.List ((:))
 import Data.List as List
@@ -45,7 +45,7 @@ junction :: forall t166.
             )
         )
 junction =
-    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) POST (unsafeSegmentFromString "players" : List.Nil) (QueryPairs [])
+    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) (Right POST) (unsafeSegmentFromString "players" : List.Nil) (QueryPairs [])
 
 wut :: String
 wut = case hush junction of

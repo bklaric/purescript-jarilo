@@ -3,7 +3,7 @@ module Routing.Route where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.HTTP.Method (Method)
+import Data.HTTP.Method (CustomMethod, Method)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Record.Builder (build)
@@ -32,7 +32,7 @@ type RouteErrors =
 class RouteRouter (route :: Route) (fields :: # Type) | route -> fields where
     routeRouter
         :: RouteProxy route
-        -> Method
+        -> Either CustomMethod Method
         -> List PathSegment
         -> QueryPairs Key Value
         -> Either (Variant RouteErrors) (Record fields)

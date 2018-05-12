@@ -2,7 +2,8 @@ module Routing.Method where
 
 import Prelude
 
-import Data.HTTP.Method (Method(..))
+import Data.Either (Either(..))
+import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Variant (SProxy(..), Variant, inj)
 
@@ -17,12 +18,14 @@ foreign import data Put :: Method
 data MethodProxy (method :: Method) = MethodProxy
 
 newtype MethodError = MethodError
-    { expectedMethod :: Method
-    , actualMethod :: Method
+    { expectedMethod :: Either CustomMethod Method
+    , actualMethod :: Either CustomMethod Method
     }
 
-checkMethod :: forall errors.
-    Method -> Method -> Maybe (Variant (methodError :: MethodError | errors))
+checkMethod :: forall errors
+    .  Either CustomMethod Method
+    -> Either CustomMethod Method
+    -> Maybe (Variant (methodError :: MethodError | errors))
 checkMethod expected actual =
     if expected == actual
     then Nothing
@@ -35,14 +38,14 @@ class MethodRouter (method :: Method) where
     methodRouter
         :: forall errors
         .  MethodProxy method
-        -> Method
+        -> Either CustomMethod Method
         -> Maybe (Variant (methodError :: MethodError | errors))
 
 instance methodRouterGet :: MethodRouter Get where
-    methodRouter _ actual = checkMethod GET actual
+    methodRouter _ actual = checkMethod (Right GET) actual
 
 instance methodRouterPost :: MethodRouter Post where
-    methodRouter _ actual = checkMethod POST actual
+    methodRouter _ actual = checkMethod (Right POST) actual
 
 instance methodRouterPut :: MethodRouter Put where
-    methodRouter _ actual = checkMethod PUT actual
+    methodRouter _ actual = checkMethod (Right PUT) actual
