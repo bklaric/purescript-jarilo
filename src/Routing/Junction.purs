@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.HTTP.Method (Method)
+import Data.HTTP.Method (CustomMethod, Method)
 import Data.List (List)
 import Data.Record.Builder (Builder, build, insert)
 import Data.Symbol (class IsSymbol)
@@ -31,7 +31,7 @@ class JunctionRouter
     | junction -> start end records where
     junctionRouter
         :: JunctionProxy junction
-        -> Method
+        -> Either CustomMethod Method
         -> List PathSegment
         -> QueryPairs Key Value
         -> Either
@@ -71,7 +71,7 @@ junctionRouter'
     :: forall junction errors results
     .  JunctionRouter junction () errors results
     => JunctionProxy junction
-    -> Method
+    -> Either CustomMethod Method
     -> List PathSegment
     -> QueryPairs Key Value
     -> Either (Record errors) (Variant results)
