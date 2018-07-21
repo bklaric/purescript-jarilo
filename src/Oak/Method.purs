@@ -1,4 +1,4 @@
-module Routing.Method where
+module Oak.Method where
 
 import Prelude
 

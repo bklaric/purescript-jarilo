@@ -1,4 +1,4 @@
-module Routing.Query.QueryPairs where
+module Oak.Query.QueryPairs where
 
 import Prelude
 

@@ -1,4 +1,4 @@
-module Routing.FromComponent where
+module Oak.FromComponent where
 
 import Prelude
 

@@ -1,4 +1,4 @@
-module Routing.Query where
+module Oak.Query where
 
 import Prelude
 
@@ -10,8 +10,8 @@ import Data.Tuple (Tuple(Tuple))
 import Data.Variant (Variant, inj)
 import Prim.Row (class Cons, class Lacks)
 import Record.Builder (Builder, insert)
-import Routing.FromComponent (class FromComponent, fromComponent)
-import Routing.Query.QueryPairs (delete, find)
+import Oak.FromComponent (class FromComponent, fromComponent)
+import Oak.Query.QueryPairs (delete, find)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value, keyFromString, valueToString)
 
 foreign import kind Query
