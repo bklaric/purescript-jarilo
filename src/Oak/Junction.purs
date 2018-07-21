@@ -67,7 +67,7 @@ instance junctionRouterJunction ::
             Right rightRecord -> Right rightRecord
         Right leftRecord -> Right leftRecord
 
-junctionRouter'
+router
     :: forall junction errors results
     .  JunctionRouter junction () errors results
     => JunctionProxy junction
@@ -75,6 +75,6 @@ junctionRouter'
     -> List PathSegment
     -> QueryPairs Key Value
     -> Either (Record errors) (Variant results)
-junctionRouter' junctionProxy method path query =
+router junctionProxy method path query =
     junctionRouter junctionProxy method path query
     # lmap (flip build {})
