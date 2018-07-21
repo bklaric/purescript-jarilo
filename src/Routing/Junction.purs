@@ -6,11 +6,11 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.List (List)
-import Data.Record.Builder (Builder, build, insert)
+import Record.Builder (Builder, build, insert)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (SProxy(..), Variant, inj)
+import Prim.Row (class Cons, class Lacks)
 import Routing.Route (class RouteRouter, RouteErrors, RouteProxy(RouteProxy), routeRouter, kind Route)
-import Type.Row (class RowLacks)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 
@@ -40,9 +40,9 @@ class JunctionRouter
 
 instance junctionRouterNamedRoute ::
     ( RouteRouter route fields
-    , RowLacks name start
-    , RowCons name (Variant RouteErrors) start end
-    , RowCons name (Record fields) inputRecords records
+    , Lacks name start
+    , Cons name (Variant RouteErrors) start end
+    , Cons name (Record fields) inputRecords records
     , IsSymbol name
     ) =>
     JunctionRouter (NamedRoute name route) start end records where

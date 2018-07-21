@@ -5,13 +5,13 @@ import Prelude
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Record.Builder (Builder, insert, passThrough)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(Tuple))
 import Data.Variant (Variant, inj)
+import Prim.Row (class Cons, class Lacks)
+import Record.Builder (Builder, insert)
 import Routing.FromComponent (class FromComponent, fromComponent)
 import Routing.Query.QueryPairs (delete, find)
-import Type.Row (class RowLacks)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value, keyFromString, valueToString)
 
 foreign import kind Query
@@ -67,13 +67,13 @@ class QueryRouter (query :: Query) (input :: # Type) (output :: # Type)
                 (Builder (Record input) (Record output)))
 
 instance queryRouterNoQuery :: QueryRouter NoQuery input input where
-    queryRouter _ query = pure $ Tuple query passThrough
+    queryRouter _ query = pure $ Tuple query identity
 
 instance queryRouterOptional ::
     ( IsSymbol name
     , FromComponent result
-    , RowLacks name input
-    , RowCons name (Maybe result) input output
+    , Lacks name input
+    , Cons name (Maybe result) input output
     ) =>
     QueryRouter (Optional name result) input output where
     queryRouter _ query = let
@@ -91,8 +91,8 @@ instance queryRouterOptional ::
 instance queryRouterMandatory ::
     ( IsSymbol name
     , FromComponent result
-    , RowLacks name input
-    , RowCons name result input output
+    , Lacks name input
+    , Cons name result input output
     ) =>
     QueryRouter (Mandatory name result) input output where
     queryRouter _ query = let
