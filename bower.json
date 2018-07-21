@@ -1,9 +1,9 @@
 {
-  "name": "purescript-oak",
-  "homepage": "https://github.com/bklaric/purescript-oak",
+  "name": "purescript-jarilo",
+  "homepage": "https://github.com/bklaric/purescript-jarilo",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bklaric/purescript-oak.git"
+    "url": "https://github.com/bklaric/purescript-jarilo.git"
   },
   "authors": [
     "Branimir Klarić <branimir.klaric.bk@gmail.com>"
@@ -28,5 +28,8 @@
     "purescript-uri": "^6.0.0",
     "purescript-variant": "^5.0.0",
     "purescript-record": "^1.0.0"
+  },
+  "devDependencies": {
+    "purescript-console": "^4.1.0"
   }
 }

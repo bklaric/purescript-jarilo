@@ -1,4 +1,4 @@
-module Oak.FromComponent where
+module Jarilo.FromComponent where
 
 import Prelude
 

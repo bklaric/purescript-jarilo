@@ -1,4 +1,4 @@
-module Oak.Query where
+module Jarilo.Query where
 
 import Prelude
 
@@ -10,8 +10,8 @@ import Data.Tuple (Tuple(Tuple))
 import Data.Variant (Variant, inj)
 import Prim.Row (class Cons, class Lacks)
 import Record.Builder (Builder, insert)
-import Oak.FromComponent (class FromComponent, fromComponent)
-import Oak.Query.QueryPairs (delete, find)
+import Jarilo.FromComponent (class FromComponent, fromComponent)
+import Jarilo.Query.QueryPairs (delete, find)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value, keyFromString, valueToString)
 
 foreign import kind Query

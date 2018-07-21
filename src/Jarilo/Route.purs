@@ -1,4 +1,4 @@
-module Oak.Route where
+module Jarilo.Route where
 
 import Prelude
 
@@ -9,10 +9,10 @@ import Data.Maybe (Maybe(..))
 import Record.Builder (build)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant)
-import Oak.Method (class MethodRouter, MethodError, MethodProxy(..), methodRouter, kind Method)
-import Oak.Path (class PathRouter, PathError, PathProxy(..), pathRouter, kind Path)
-import Oak.Query (class QueryRouter, QueryError, QueryProxy(..), queryRouter, kind Query)
-import Oak.Segment (SegmentError)
+import Jarilo.Method (class MethodRouter, MethodError, MethodProxy(..), methodRouter, kind Method)
+import Jarilo.Path (class PathRouter, PathError, PathProxy(..), pathRouter, kind Path)
+import Jarilo.Query (class QueryRouter, QueryError, QueryProxy(..), queryRouter, kind Query)
+import Jarilo.Segment (SegmentError)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 

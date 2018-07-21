@@ -1,4 +1,4 @@
-module Oak.Method where
+module Jarilo.Method where
 
 import Prelude
 

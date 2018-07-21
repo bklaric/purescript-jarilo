@@ -1,4 +1,4 @@
-module Oak.Path where
+module Jarilo.Path where
 
 import Prelude
 
@@ -7,7 +7,7 @@ import Data.List (List(..), (:))
 import Record.Builder (Builder)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
-import Oak.Segment (class SegmentRouter, Capture, Literal, SegmentError, SegmentProxy(..), segmentRouter, kind Segment)
+import Jarilo.Segment (class SegmentRouter, Capture, Literal, SegmentError, SegmentProxy(..), segmentRouter, kind Segment)
 import URI.Path.Segment (PathSegment)
 
 foreign import kind Path

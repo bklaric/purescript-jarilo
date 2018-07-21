@@ -1,4 +1,4 @@
-module Oak.Junction where
+module Jarilo.Junction where
 
 import Prelude
 
@@ -10,7 +10,7 @@ import Record.Builder (Builder, build, insert)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (SProxy(..), Variant, inj)
 import Prim.Row (class Cons, class Lacks)
-import Oak.Route (class RouteRouter, RouteErrors, RouteProxy(..), routeRouter, kind Route)
+import Jarilo.Route (class RouteRouter, RouteErrors, RouteProxy(..), routeRouter, kind Route)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 
