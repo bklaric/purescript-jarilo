@@ -1,6 +1,10 @@
 {
   "name": "purescript-oak",
   "homepage": "https://github.com/bklaric/purescript-oak",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bklaric/purescript-oak.git"
+  },
   "authors": [
     "Branimir Klarić <branimir.klaric.bk@gmail.com>"
   ],
