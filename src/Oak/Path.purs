@@ -1,13 +1,13 @@
-module Routing.Path where
+module Oak.Path where
 
 import Prelude
 
 import Data.Either (Either(..))
-import Data.List (List(Nil), (:))
-import Data.Record.Builder (Builder, passThrough)
+import Data.List (List(..), (:))
+import Record.Builder (Builder)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
-import Routing.Segment (class SegmentRouter, Capture, Literal, SegmentError, SegmentProxy(..), segmentRouter, kind Segment)
+import Oak.Segment (class SegmentRouter, Capture, Literal, SegmentError, SegmentProxy(..), segmentRouter, kind Segment)
 import URI.Path.Segment (PathSegment)
 
 foreign import kind Path
@@ -42,7 +42,7 @@ class PathRouter
             (Builder (Record input) (Record output))
 
 instance pathRouterEnd :: PathRouter End input input where
-    pathRouter _ Nil = Right passThrough
+    pathRouter _ Nil = Right identity
     pathRouter _ nonEmptyPath =
         Left
         $ inj (SProxy :: SProxy "pathError")

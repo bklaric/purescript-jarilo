@@ -1,0 +1,32 @@
+{
+  "name": "purescript-oak",
+  "homepage": "https://github.com/bklaric/purescript-oak",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bklaric/purescript-oak.git"
+  },
+  "authors": [
+    "Branimir Klarić <branimir.klaric.bk@gmail.com>"
+  ],
+  "description": "PureScript HTTP request routing library.",
+  "main": "",
+  "keywords": [
+    "purescript",
+    "http",
+    "routing"
+  ],
+  "license": "AGPL-3.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "purescript-http-methods": "^4.0.1",
+    "purescript-uri": "^6.0.0",
+    "purescript-variant": "^5.0.0",
+    "purescript-record": "^1.0.0"
+  }
+}

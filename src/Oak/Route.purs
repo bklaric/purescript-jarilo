@@ -1,4 +1,4 @@
-module Routing.Route where
+module Oak.Route where
 
 import Prelude
 
@@ -6,13 +6,13 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
-import Data.Record.Builder (build)
+import Record.Builder (build)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant)
-import Routing.Method (class MethodRouter, MethodError, MethodProxy(MethodProxy), methodRouter, kind Method)
-import Routing.Path (class PathRouter, PathError, PathProxy(PathProxy), pathRouter, kind Path)
-import Routing.Query (class QueryRouter, QueryError, QueryProxy(QueryProxy), queryRouter, kind Query)
-import Routing.Segment (SegmentError)
+import Oak.Method (class MethodRouter, MethodError, MethodProxy(..), methodRouter, kind Method)
+import Oak.Path (class PathRouter, PathError, PathProxy(..), pathRouter, kind Path)
+import Oak.Query (class QueryRouter, QueryError, QueryProxy(..), queryRouter, kind Query)
+import Oak.Segment (SegmentError)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 

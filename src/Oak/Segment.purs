@@ -1,14 +1,14 @@
-module Routing.Segment where
+module Oak.Segment where
 
 import Prelude
 
 import Data.Bifunctor (bimap)
 import Data.Either (Either(Left, Right))
-import Data.Record.Builder (Builder, insert, passThrough)
+import Record.Builder (Builder, insert)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
-import Routing.FromComponent (class FromComponent, fromComponent)
-import Type.Row (class RowLacks)
+import Prim.Row (class Cons, class Lacks)
+import Oak.FromComponent (class FromComponent, fromComponent)
 import URI.Path.Segment (PathSegment, segmentToString, unsafeSegmentFromString)
 
 foreign import kind Segment
@@ -48,7 +48,7 @@ instance segmentRouterLiteral :: IsSymbol literal =>
         expectedLiteral = reflectSymbol (SProxy :: SProxy literal) # unsafeSegmentFromString
         in
         if expectedLiteral == actualLiteral
-        then Right $ passThrough
+        then Right identity
         else Left $ inj (SProxy :: SProxy "segmentError") $ LiteralError $
         { expectedLiteral: expectedLiteral
         , actualLiteral: actualLiteral
@@ -56,8 +56,8 @@ instance segmentRouterLiteral :: IsSymbol literal =>
 
 instance segmentRouterCapture ::
     ( IsSymbol name
-    , RowLacks name input
-    , RowCons name value input output
+    , Lacks name input
+    , Cons name value input output
     , FromComponent value
     ) =>
     SegmentRouter (Capture name value) input output where

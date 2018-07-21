@@ -1,4 +1,4 @@
-module Routing.Junction where
+module Oak.Junction where
 
 import Prelude
 
@@ -6,11 +6,11 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.List (List)
-import Data.Record.Builder (Builder, build, insert)
+import Record.Builder (Builder, build, insert)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (SProxy(..), Variant, inj)
-import Routing.Route (class RouteRouter, RouteErrors, RouteProxy(RouteProxy), routeRouter, kind Route)
-import Type.Row (class RowLacks)
+import Prim.Row (class Cons, class Lacks)
+import Oak.Route (class RouteRouter, RouteErrors, RouteProxy(..), routeRouter, kind Route)
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 
@@ -40,9 +40,9 @@ class JunctionRouter
 
 instance junctionRouterNamedRoute ::
     ( RouteRouter route fields
-    , RowLacks name start
-    , RowCons name (Variant RouteErrors) start end
-    , RowCons name (Record fields) inputRecords records
+    , Lacks name start
+    , Cons name (Variant RouteErrors) start end
+    , Cons name (Record fields) inputRecords records
     , IsSymbol name
     ) =>
     JunctionRouter (NamedRoute name route) start end records where
@@ -67,7 +67,7 @@ instance junctionRouterJunction ::
             Right rightRecord -> Right rightRecord
         Right leftRecord -> Right leftRecord
 
-junctionRouter'
+router
     :: forall junction errors results
     .  JunctionRouter junction () errors results
     => JunctionProxy junction
@@ -75,6 +75,6 @@ junctionRouter'
     -> List PathSegment
     -> QueryPairs Key Value
     -> Either (Record errors) (Variant results)
-junctionRouter' junctionProxy method path query =
+router junctionProxy method path query =
     junctionRouter junctionProxy method path query
     # lmap (flip build {})
