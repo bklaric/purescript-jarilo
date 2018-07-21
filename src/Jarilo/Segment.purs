@@ -1,4 +1,4 @@
-module Oak.Segment where
+module Jarilo.Segment where
 
 import Prelude
 
@@ -8,7 +8,7 @@ import Record.Builder (Builder, insert)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
 import Prim.Row (class Cons, class Lacks)
-import Oak.FromComponent (class FromComponent, fromComponent)
+import Jarilo.FromComponent (class FromComponent, fromComponent)
 import URI.Path.Segment (PathSegment, segmentToString, unsafeSegmentFromString)
 
 foreign import kind Segment

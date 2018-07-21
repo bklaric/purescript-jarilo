@@ -2,8 +2,6 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Either (Either(..), hush)
 import Data.HTTP.Method (Method(..))
 import Data.List ((:))
@@ -11,12 +9,14 @@ import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.Variant (Variant, match)
-import Oak.Junction (type (:=), type (:<|>), JunctionProxy(..), junctionRouter')
-import Oak.Method (Get, Post)
-import Oak.Path (type (:>), End)
-import Oak.Query (type (:?), Mandatory, NoQuery, Optional)
-import Oak.Route (Route, RouteErrors)
-import Oak.Segment (Capture, Literal)
+import Effect (Effect)
+import Effect.Console (log)
+import Jarilo.Junction (type (:=), type (:<|>), JunctionProxy(..), router)
+import Jarilo.Method (Get, Post)
+import Jarilo.Path (type (:>), End)
+import Jarilo.Query (type (:?), Mandatory, NoQuery, Optional)
+import Jarilo.Route (Route, RouteErrors)
+import Jarilo.Segment (Capture, Literal)
 import URI.Extra.QueryPairs (QueryPairs(..))
 import URI.Path.Segment (unsafeSegmentFromString)
 
@@ -45,7 +45,7 @@ junction :: forall t166.
             )
         )
 junction =
-    junctionRouter' (JunctionProxy :: JunctionProxy PlayerRoutes) (Right POST) (unsafeSegmentFromString "players" : List.Nil) (QueryPairs [])
+    router (JunctionProxy :: JunctionProxy PlayerRoutes) (Right POST) (unsafeSegmentFromString "players" : List.Nil) (QueryPairs [])
 
 wut :: String
 wut = case hush junction of
@@ -57,6 +57,6 @@ wut = case hush junction of
         }
         routeValues
 
-main :: forall e. Eff (console :: CONSOLE | e) Unit
+main :: Effect Unit
 main = do
   log "You should add some tests."

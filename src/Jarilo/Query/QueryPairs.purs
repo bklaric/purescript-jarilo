@@ -1,4 +1,4 @@
-module Oak.Query.QueryPairs where
+module Jarilo.Query.QueryPairs where
 
 import Prelude
 
