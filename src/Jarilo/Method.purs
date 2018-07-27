@@ -9,11 +9,19 @@ import Data.Variant (SProxy(..), Variant, inj)
 
 foreign import kind Method
 
+foreign import data Options :: Method
+
+foreign import data Head :: Method
+
 foreign import data Get :: Method
 
 foreign import data Post :: Method
 
 foreign import data Put :: Method
+
+foreign import data Patch :: Method
+
+foreign import data Delete :: Method
 
 data MethodProxy (method :: Method) = MethodProxy
 
@@ -41,6 +49,12 @@ class MethodRouter (method :: Method) where
         -> Either CustomMethod Method
         -> Maybe (Variant (methodError :: MethodError | errors))
 
+instance methodRouterOptions :: MethodRouter Options where
+    methodRouter _ actual = checkMethod (Right OPTIONS) actual
+
+instance methodRouterHead :: MethodRouter Head where
+    methodRouter _ actual = checkMethod (Right HEAD) actual
+
 instance methodRouterGet :: MethodRouter Get where
     methodRouter _ actual = checkMethod (Right GET) actual
 
@@ -49,3 +63,9 @@ instance methodRouterPost :: MethodRouter Post where
 
 instance methodRouterPut :: MethodRouter Put where
     methodRouter _ actual = checkMethod (Right PUT) actual
+
+instance methodRouterPatch :: MethodRouter Patch where
+    methodRouter _ actual = checkMethod (Right PATCH) actual
+
+instance methodRouterDelete :: MethodRouter Delete where
+    methodRouter _ actual = checkMethod (Right DELETE) actual
