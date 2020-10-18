@@ -3,6 +3,8 @@ module Jarilo.Method where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Variant (SProxy(..), Variant, inj)
@@ -29,6 +31,11 @@ newtype MethodError = MethodError
     { expectedMethod :: Either CustomMethod Method
     , actualMethod :: Either CustomMethod Method
     }
+
+derive instance genericMethodError :: Generic MethodError _
+
+instance showMethodError :: Show MethodError where
+    show = genericShow
 
 checkMethod :: forall errors
     .  Either CustomMethod Method

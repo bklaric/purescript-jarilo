@@ -2,17 +2,21 @@ module Jarilo.Query where
 
 import Prelude
 
-import Data.Bifunctor (bimap)
+import Data.Array (catMaybes)
+import Data.Bifunctor (bimap, lmap)
 import Data.Either (Either(..))
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Data.Tuple (Tuple(Tuple))
+import Data.Traversable (traverse)
+import Data.Tuple (Tuple(Tuple), snd)
 import Data.Variant (Variant, inj)
+import Jarilo.FromComponent (class FromComponent, fromComponent)
+import Jarilo.Query.QueryPairs (delete, find, findAll)
 import Prim.Row (class Cons, class Lacks)
 import Record.Builder (Builder, insert)
-import Jarilo.FromComponent (class FromComponent, fromComponent)
-import Jarilo.Query.QueryPairs (delete, find)
-import URI.Extra.QueryPairs (Key, QueryPairs, Value, keyFromString, valueToString)
+import URI.Extra.QueryPairs (Key, QueryPairs(..), Value, keyFromString, valueToString)
 
 foreign import kind Query
 
@@ -21,6 +25,10 @@ foreign import data NoQuery :: Query
 foreign import data Optional :: Symbol -> Type -> Query
 
 foreign import data Mandatory :: Symbol -> Type -> Query
+
+foreign import data Many :: Symbol -> Type -> Query
+
+foreign import data Rest :: Symbol -> Query
 
 foreign import data Query :: Query -> Query -> Query
 
@@ -39,6 +47,11 @@ data QueryError
         , actualValue :: Value
         }
 
+derive instance genericQueryError :: Generic QueryError _
+
+instance showQueryError :: Show QueryError where
+    show = genericShow
+
 parameterParseError :: forall parameterName errors. IsSymbol parameterName =>
     SProxy parameterName
     -> Value
@@ -53,6 +66,10 @@ parameterParseError nameProxy actualValue errorMessage =
 
 fromValue :: forall value. FromComponent value => Value -> Either String value
 fromValue = valueToString >>> fromComponent
+
+fromValue' :: forall value. FromComponent value =>
+    Value -> Either { error :: String, value :: Value } value
+fromValue' value = valueToString value # fromComponent # lmap { error: _, value }
 
 class QueryRouter (query :: Query) (input :: # Type) (output :: # Type)
     | query -> input output where
@@ -74,8 +91,7 @@ instance queryRouterOptional ::
     , FromComponent result
     , Lacks name input
     , Cons name (Maybe result) input output
-    ) =>
-    QueryRouter (Optional name result) input output where
+    ) => QueryRouter (Optional name result) input output where
     queryRouter _ query = let
         nameProxy = (SProxy :: SProxy name)
         newQuery = delete (keyFromString $ reflectSymbol nameProxy) query
@@ -93,8 +109,7 @@ instance queryRouterMandatory ::
     , FromComponent result
     , Lacks name input
     , Cons name result input output
-    ) =>
-    QueryRouter (Mandatory name result) input output where
+    ) => QueryRouter (Mandatory name result) input output where
     queryRouter _ query = let
         nameProxy = (SProxy :: SProxy name)
         newQuery = delete (keyFromString $ reflectSymbol nameProxy) query
@@ -111,6 +126,23 @@ instance queryRouterMandatory ::
                 (parameterParseError nameProxy value)
                 (insert nameProxy)
 
+instance queryRouterMany ::
+    ( IsSymbol name
+    , FromComponent result
+    , Lacks name input
+    , Cons name (Array result) input output
+    ) => QueryRouter (Many name result) input output where
+    queryRouter _ query = let
+        nameProxy = (SProxy :: SProxy name)
+        newQuery = delete (keyFromString $ reflectSymbol nameProxy) query
+        foundPairs = findAll (keyFromString $ reflectSymbol nameProxy) query
+        foundValues = foundPairs <#> snd # catMaybes # traverse fromValue'
+        in
+        bimap
+            (\{ error, value } -> parameterParseError nameProxy value error)
+            (\foundValues' -> Tuple newQuery $ insert nameProxy foundValues')
+            foundValues
+
 instance queryRouterQuery ::
     ( QueryRouter leftQuery input midput
     , QueryRouter rightQuery midput output
@@ -122,3 +154,11 @@ instance queryRouterQuery ::
         Tuple leftQuery leftBuilder <- queryRouter leftQueryProxy query
         Tuple rightQuery rightBuilder <- queryRouter rightQueryProxy leftQuery
         pure $ Tuple rightQuery $ leftBuilder >>> rightBuilder
+
+instance queryRouterRest ::
+    ( IsSymbol name
+    , Lacks name input
+    , Cons name (QueryPairs Key Value) input output
+    ) => QueryRouter (Rest name) input output where
+    queryRouter _ query =
+        pure $ Tuple (QueryPairs []) (insert (SProxy :: SProxy name) query)

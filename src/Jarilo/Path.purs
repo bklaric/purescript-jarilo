@@ -3,11 +3,13 @@ module Jarilo.Path where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.List (List(..), (:))
-import Record.Builder (Builder)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
 import Jarilo.Segment (class SegmentRouter, Capture, Literal, SegmentError, SegmentProxy(..), segmentRouter, kind Segment)
+import Record.Builder (Builder)
 import URI.Path.Segment (PathSegment)
 
 foreign import kind Path
@@ -23,6 +25,11 @@ data PathProxy (path :: Path) = PathProxy
 data PathError
     = NotEndError { restOfPath :: List PathSegment }
     | SegmentEndError { expectedSegment :: String }
+
+derive instance genericPathError :: Generic PathError _
+
+instance showPathError :: Show PathError where
+    show = genericShow
 
 type PathRouterErrors errors =
     ( pathError :: PathError

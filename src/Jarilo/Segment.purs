@@ -4,11 +4,13 @@ import Prelude
 
 import Data.Bifunctor (bimap)
 import Data.Either (Either(Left, Right))
-import Record.Builder (Builder, insert)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Variant (Variant, inj)
-import Prim.Row (class Cons, class Lacks)
 import Jarilo.FromComponent (class FromComponent, fromComponent)
+import Prim.Row (class Cons, class Lacks)
+import Record.Builder (Builder, insert)
 import URI.Path.Segment (PathSegment, segmentToString, unsafeSegmentFromString)
 
 foreign import kind Segment
@@ -27,6 +29,11 @@ data SegmentError
         , errorMessage :: String
         , actualSegment :: PathSegment
         }
+
+derive instance genericSegmentError :: Generic SegmentError _
+
+instance showSegmentError :: Show SegmentError where
+    show = genericShow
 
 data SegmentProxy (segment :: Segment) = SegmentProxy
 

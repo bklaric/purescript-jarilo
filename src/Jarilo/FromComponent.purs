@@ -7,7 +7,6 @@ import Data.Int as Int
 import Data.String (toLower)
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
-import Type.Data.Boolean (kind Boolean)
 
 class FromComponent value where
     fromComponent :: String -> Either String value
