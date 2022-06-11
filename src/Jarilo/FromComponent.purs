@@ -11,19 +11,19 @@ import Data.String.NonEmpty as NonEmptyString
 class FromComponent value where
     fromComponent :: String -> Either String value
 
-instance fromComponentString :: FromComponent String where
+instance FromComponent String where
     fromComponent = pure
 
-instance fromComponentInt :: FromComponent Int where
+instance FromComponent Int where
     fromComponent =
         Int.fromString >>> note "Couldn't turn component into an integer."
 
-instance fromComponentBoolean :: FromComponent Boolean where
+instance FromComponent Boolean where
     fromComponent = toLower >>>
         case _ of
         "true" -> Right true
         "false" -> Right false
         _ -> Left "Couldn't turn component into a boolean."
 
-instance fromComponentNonEmptyString :: FromComponent NonEmptyString where
+instance FromComponent NonEmptyString where
     fromComponent = NonEmptyString.fromString >>> note "Component cannot be empty."

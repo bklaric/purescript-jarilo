@@ -3,24 +3,23 @@ module Jarilo.Route where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.HTTP.Method (CustomMethod, Method)
+import Data.HTTP.Method (CustomMethod, Method) as HM
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant)
-import Jarilo.Method (class MethodRouter, MethodError, MethodProxy(..), methodRouter, kind Method)
-import Jarilo.Path (class PathRouter, PathError, PathProxy(..), pathRouter, kind Path)
-import Jarilo.Query (class QueryRouter, QueryError, QueryProxy(..), queryRouter, kind Query)
+import Jarilo.Method (class MethodRouter, MethodError, methodRouter, Method)
+import Jarilo.Path (class PathRouter, PathError, pathRouter, Path)
+import Jarilo.Query (class QueryRouter, QueryError, queryRouter, Query)
 import Jarilo.Segment (SegmentError)
 import Record.Builder (build)
+import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 
-foreign import kind Route
+foreign import data Route :: Type
 
-foreign import data Route :: Method -> Path -> Query -> Route
-
-data RouteProxy (route :: Route) = RouteProxy
+foreign import data Route' :: Method -> Path -> Query -> Route
 
 type RouteErrors =
     ( methodError :: MethodError
@@ -29,24 +28,46 @@ type RouteErrors =
     , queryError :: QueryError
     )
 
-class RouteRouter (route :: Route) (fields :: # Type) | route -> fields where
+-- routeRouter
+--     :: forall route fields method path query midput
+--     .  MethodRouter method
+--     => PathRouter path () midput
+--     => QueryRouter query midput fields
+--     => Proxy route
+--     -> Either HM.CustomMethod HM.Method
+--     -> List PathSegment
+--     -> QueryPairs Key Value
+--     -> Either (Variant RouteErrors) (Record fields)
+-- routeRouter _ method path query = let
+--     methodProxy = (Proxy :: _ method)
+--     pathProxy = (Proxy :: _ path)
+--     queryProxy = (Proxy :: _ query)
+--     in
+--     case methodRouter methodProxy method of
+--     Just methodError -> Left methodError
+--     Nothing -> do
+--         pathBuilder <- pathRouter pathProxy path
+--         Tuple _ queryBuilder <- queryRouter queryProxy query
+--         pure $ build (pathBuilder >>> queryBuilder) {}
+
+class RouteRouter (route :: Route) (fields :: Row Type) | route -> fields where
     routeRouter
-        :: RouteProxy route
-        -> Either CustomMethod Method
+        :: Proxy route
+        -> Either HM.CustomMethod HM.Method
         -> List PathSegment
         -> QueryPairs Key Value
         -> Either (Variant RouteErrors) (Record fields)
 
-instance routeRouterRoute ::
+instance
     ( MethodRouter method
     , PathRouter path () midput
     , QueryRouter query midput fields
     ) =>
-    RouteRouter (Route method path query) fields where
+    RouteRouter (Route' method path query) fields where
     routeRouter _ method path query = let
-        methodProxy = (MethodProxy :: MethodProxy method)
-        pathProxy = (PathProxy :: PathProxy path)
-        queryProxy = (QueryProxy :: QueryProxy query)
+        methodProxy = (Proxy :: _ method)
+        pathProxy = (Proxy :: _ path)
+        queryProxy = (Proxy :: _ query)
         in
         case methodRouter methodProxy method of
         Just methodError -> Left methodError

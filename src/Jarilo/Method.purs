@@ -4,12 +4,13 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
-import Data.HTTP.Method (CustomMethod, Method(..))
+import Data.HTTP.Method (CustomMethod, Method(..)) as HM
 import Data.Maybe (Maybe(..))
-import Data.Variant (SProxy(..), Variant, inj)
+import Data.Show.Generic (genericShow)
+import Data.Variant (Variant, inj)
+import Type.Proxy (Proxy(..))
 
-foreign import kind Method
+foreign import data Method :: Type
 
 foreign import data Options :: Method
 
@@ -25,26 +26,24 @@ foreign import data Patch :: Method
 
 foreign import data Delete :: Method
 
-data MethodProxy (method :: Method) = MethodProxy
-
 newtype MethodError = MethodError
-    { expectedMethod :: Either CustomMethod Method
-    , actualMethod :: Either CustomMethod Method
+    { expectedMethod :: Either HM.CustomMethod HM.Method
+    , actualMethod :: Either HM.CustomMethod HM.Method
     }
 
-derive instance genericMethodError :: Generic MethodError _
+derive instance Generic MethodError _
 
-instance showMethodError :: Show MethodError where
+instance Show MethodError where
     show = genericShow
 
 checkMethod :: forall errors
-    .  Either CustomMethod Method
-    -> Either CustomMethod Method
+    .  Either HM.CustomMethod HM.Method
+    -> Either HM.CustomMethod HM.Method
     -> Maybe (Variant (methodError :: MethodError | errors))
 checkMethod expected actual =
     if expected == actual
     then Nothing
-    else Just $ inj (SProxy :: SProxy "methodError") $ MethodError
+    else Just $ inj (Proxy :: _ "methodError") $ MethodError
     { expectedMethod: expected
     , actualMethod: actual
     }
@@ -52,27 +51,27 @@ checkMethod expected actual =
 class MethodRouter (method :: Method) where
     methodRouter
         :: forall errors
-        .  MethodProxy method
-        -> Either CustomMethod Method
+        .  Proxy method
+        -> Either HM.CustomMethod HM.Method
         -> Maybe (Variant (methodError :: MethodError | errors))
 
-instance methodRouterOptions :: MethodRouter Options where
-    methodRouter _ actual = checkMethod (Right OPTIONS) actual
+instance MethodRouter Options where
+    methodRouter _ actual = checkMethod (Right HM.OPTIONS) actual
 
-instance methodRouterHead :: MethodRouter Head where
-    methodRouter _ actual = checkMethod (Right HEAD) actual
+instance MethodRouter Head where
+    methodRouter _ actual = checkMethod (Right HM.HEAD) actual
 
-instance methodRouterGet :: MethodRouter Get where
-    methodRouter _ actual = checkMethod (Right GET) actual
+instance MethodRouter Get where
+    methodRouter _ actual = checkMethod (Right HM.GET) actual
 
-instance methodRouterPost :: MethodRouter Post where
-    methodRouter _ actual = checkMethod (Right POST) actual
+instance MethodRouter Post where
+    methodRouter _ actual = checkMethod (Right HM.POST) actual
 
-instance methodRouterPut :: MethodRouter Put where
-    methodRouter _ actual = checkMethod (Right PUT) actual
+instance MethodRouter Put where
+    methodRouter _ actual = checkMethod (Right HM.PUT) actual
 
-instance methodRouterPatch :: MethodRouter Patch where
-    methodRouter _ actual = checkMethod (Right PATCH) actual
+instance MethodRouter Patch where
+    methodRouter _ actual = checkMethod (Right HM.PATCH) actual
 
-instance methodRouterDelete :: MethodRouter Delete where
-    methodRouter _ actual = checkMethod (Right DELETE) actual
+instance MethodRouter Delete where
+    methodRouter _ actual = checkMethod (Right HM.DELETE) actual

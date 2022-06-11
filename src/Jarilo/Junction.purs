@@ -6,31 +6,30 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.List (List)
-import Record.Builder (Builder, build, insert)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (SProxy(..), Variant, inj)
+import Data.Variant (Variant, inj)
+import Jarilo.Route (class RouteRouter, Route, RouteErrors, routeRouter)
 import Prim.Row (class Cons, class Lacks)
-import Jarilo.Route (class RouteRouter, RouteErrors, RouteProxy(..), routeRouter, kind Route)
+import Record.Builder (Builder, build, insert)
+import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 
-foreign import kind Junction
+foreign import data Junction :: Type
 
 foreign import data NamedRoute :: Symbol -> Route -> Junction
 
 infixr 9 type NamedRoute as :=
 
-foreign import data Junction :: Junction -> Junction -> Junction
+foreign import data JunctionChain :: Junction -> Junction -> Junction
 
-infixr 8 type Junction as :<|>
-
-data JunctionProxy (junction :: Junction) = JunctionProxy
+infixr 8 type JunctionChain as :<|>
 
 class JunctionRouter
-    (junction :: Junction) (start :: # Type) (end :: # Type) (records :: # Type)
+    (junction :: Junction) (start :: Row Type) (end :: Row Type) (records :: Row Type)
     | junction -> start end records where
     junctionRouter
-        :: JunctionProxy junction
+        :: Proxy junction
         -> Either CustomMethod Method
         -> List PathSegment
         -> QueryPairs Key Value
@@ -38,7 +37,7 @@ class JunctionRouter
             (Builder (Record start) (Record end))
             (Variant records)
 
-instance junctionRouterNamedRoute ::
+instance
     ( RouteRouter route fields
     , Lacks name start
     , Cons name (Variant RouteErrors) start end
@@ -47,18 +46,18 @@ instance junctionRouterNamedRoute ::
     ) =>
     JunctionRouter (NamedRoute name route) start end records where
     junctionRouter _ method path query =
-        case routeRouter (RouteProxy :: RouteProxy route) method path query of
-        Left routeError -> Left $ insert (SProxy :: SProxy name) routeError
-        Right resultRecord -> Right $ inj (SProxy :: SProxy name) resultRecord
+        case routeRouter (Proxy :: _ route) method path query of
+        Left routeError -> Left $ insert (Proxy :: _ name) routeError
+        Right resultRecord -> Right $ inj (Proxy :: _ name) resultRecord
 
-instance junctionRouterJunction ::
+instance
     ( JunctionRouter leftJunction start mid records
     , JunctionRouter rightJunction mid end records
     ) =>
-    JunctionRouter (Junction leftJunction rightJunction) start end records where
+    JunctionRouter (JunctionChain leftJunction rightJunction) start end records where
     junctionRouter _ method path query = let
-        leftProxy = (JunctionProxy :: JunctionProxy leftJunction)
-        rightProxy = (JunctionProxy :: JunctionProxy rightJunction)
+        leftProxy = (Proxy :: _ leftJunction)
+        rightProxy = (Proxy :: _ rightJunction)
         in
         case junctionRouter leftProxy method path query of
         Left leftBuilder ->
@@ -70,7 +69,7 @@ instance junctionRouterJunction ::
 router
     :: forall junction errors results
     .  JunctionRouter junction () errors results
-    => JunctionProxy junction
+    => Proxy junction
     -> Either CustomMethod Method
     -> List PathSegment
     -> QueryPairs Key Value
