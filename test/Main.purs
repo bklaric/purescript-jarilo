@@ -15,17 +15,17 @@ import Jarilo.Junction (type (:=), type (:<|>), router)
 import Jarilo.Method (Get, Post)
 import Jarilo.Path (type (:>), End)
 import Jarilo.Query (type (:?), Mandatory, NoQuery, Optional)
-import Jarilo.Route (Route', RouteErrors)
+import Jarilo.Route (FullRoute, RouteErrors)
 import Jarilo.Segment (Capture, Literal)
 import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (QueryPairs(..))
 import URI.Path.Segment (unsafeSegmentFromString)
 
-type RegisterPlayer = Route' Post (Literal "players" :> End) NoQuery
+type RegisterPlayer = FullRoute Post (Literal "players" :> End) NoQuery
 
-type ViewPlayer = Route' Get (Literal "players" :> Capture "nickname" NonEmptyString :> End) NoQuery
+type ViewPlayer = FullRoute Get (Literal "players" :> Capture "nickname" NonEmptyString :> End) NoQuery
 
-type ViewPlayers = Route' Get (Literal "players" :> End) (Optional "game" NonEmptyString :? Mandatory "teamId" Int)
+type ViewPlayers = FullRoute Get (Literal "players" :> End) (Optional "game" NonEmptyString :? Mandatory "teamId" Int)
 
 type PlayerRoutes
     =    "registerPlayer" := RegisterPlayer
