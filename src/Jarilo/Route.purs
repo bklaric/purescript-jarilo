@@ -11,14 +11,13 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method) as HM
-import Data.List (List)
+import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Data.Variant (Variant)
+import Data.Variant (Variant, inj)
 import Jarilo.Method (class MethodRouter, Method, MethodError, methodRouter)
-import Jarilo.Path (class PathRouter, Path, PathError, pathRouter)
+import Jarilo.Path (class PathRouter, Path, PathError(..), pathRouter)
 import Jarilo.Query (class QueryRouter, Query, QueryError, queryRouter)
-import Jarilo.Segment (SegmentError)
 import Record.Builder (build)
 import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
@@ -30,7 +29,6 @@ foreign import data FullRoute :: Method -> Path -> Query -> Route
 
 type RouteErrors =
     ( methodError :: MethodError
-    , segmentError :: SegmentError
     , pathError :: PathError
     , queryError :: QueryError
     )
@@ -57,6 +55,9 @@ instance
         case methodRouter methodProxy method of
         Just methodError -> Left methodError
         Nothing -> do
-            pathBuilder <- pathRouter pathProxy path
-            Tuple _ queryBuilder <- queryRouter queryProxy query
-            pure $ build (pathBuilder >>> queryBuilder) {}
+            Tuple restOfPath pathBuilder <- pathRouter pathProxy path
+            case restOfPath of
+                Nil -> do
+                    Tuple _ queryBuilder <- queryRouter queryProxy query
+                    pure $ build (pathBuilder >>> queryBuilder) {}
+                _ -> Left $ inj (Proxy :: _ "pathError") $ NotEndError { restOfPath }

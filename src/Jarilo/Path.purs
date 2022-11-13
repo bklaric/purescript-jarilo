@@ -2,29 +2,42 @@ module Jarilo.Path where
 
 import Prelude
 
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), (:))
 import Data.Show.Generic (genericShow)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj)
-import Jarilo.Segment (class SegmentRouter, Capture, Literal, SegmentError, segmentRouter, Segment)
-import Record.Builder (Builder)
+import Jarilo.FromComponent (class FromComponent, fromComponent)
+import Prim.Row (class Cons, class Lacks)
+import Record.Builder (Builder, insert)
 import Type.Proxy (Proxy(..))
-import URI.Path.Segment (PathSegment)
+import URI.Path.Segment (PathSegment, segmentToString, unsafeSegmentFromString)
 
 foreign import data Path :: Type
 
-foreign import data End :: Path
+foreign import data Literal :: Symbol -> Path
 
-foreign import data Sub :: Segment -> Path -> Path
+foreign import data Capture :: Symbol -> Type -> Path
+
+foreign import data Sub :: Path -> Path -> Path
 
 infixr 9 type Sub as :>
 
 data PathError
     = NotEndError { restOfPath :: List PathSegment }
     | SegmentEndError { expectedSegment :: String }
-
+    | LiteralError
+        { expectedLiteral :: PathSegment
+        , actualLiteral :: PathSegment
+        }
+    | CaptureError
+        { segmentName :: String
+        , errorMessage :: String
+        , actualSegment :: PathSegment
+        }
 derive instance Generic PathError _
 
 instance Show PathError where
@@ -32,64 +45,70 @@ instance Show PathError where
 
 type PathRouterErrors errors =
     ( pathError :: PathError
-    , segmentError :: SegmentError
     | errors
     )
 
 class PathRouter
     (path :: Path) (input :: Row Type) (output :: Row Type)
-    | path -> input output where
+    | path -> input output
+    where
     pathRouter
         :: forall errors
         .  Proxy path
         -> List PathSegment
         -> Either
             (Variant (PathRouterErrors errors))
-            (Builder (Record input) (Record output))
+            (Tuple
+                (List PathSegment)
+                (Builder (Record input) (Record output))
+            )
 
-instance PathRouter End input input where
-    pathRouter _ Nil = Right identity
-    pathRouter _ nonEmptyPath =
-        Left
-        $ inj (Proxy :: _ "pathError")
-        $ NotEndError
-        $ { restOfPath: nonEmptyPath }
-
-instance
-    ( IsSymbol literal
-    , SegmentRouter (Literal literal) input midput
-    , PathRouter path midput output
-    ) =>
-    PathRouter (Sub (Literal literal) path) input output where
+instance IsSymbol literal => PathRouter (Literal literal) input input where
     pathRouter _ Nil =
         Left
         $ inj (Proxy :: _ "pathError")
         $ SegmentEndError
         $ { expectedSegment: reflectSymbol (Proxy :: _ literal) }
-    pathRouter _ (segment : path) = do
-        segmentBuilder :: Builder (Record input) (Record midput) <-
-            segmentRouter
-                (Proxy :: _ (Literal literal))
-                segment
-        pathBuilder <- pathRouter (Proxy :: _ path) path
-        pure $ segmentBuilder >>> pathBuilder
+    pathRouter _ (actualLiteral : path) = do
+        let expectedLiteral = reflectSymbol (Proxy :: _ literal) # unsafeSegmentFromString
+        builder <- if expectedLiteral == actualLiteral
+            then Right identity
+            else Left $ inj (Proxy :: _ "pathError") $ LiteralError $
+            { expectedLiteral: expectedLiteral
+            , actualLiteral: actualLiteral
+            }
+        Right $ Tuple path builder
 
 instance
     ( IsSymbol name
-    , SegmentRouter (Capture name result) input midput
-    , PathRouter path midput output
+    , Lacks name input
+    , Cons name value input output
+    , FromComponent value
     ) =>
-    PathRouter (Sub (Capture name result) path) input output where
+    PathRouter (Capture name value) input output where
     pathRouter _ Nil =
         Left
         $ inj (Proxy :: _ "pathError")
         $ SegmentEndError
         $ { expectedSegment: reflectSymbol (Proxy :: _ name) }
-    pathRouter _ (segment : path) = do
-        segmentBuilder :: Builder (Record input) (Record midput) <-
-            segmentRouter
-                (Proxy :: _ (Capture name result))
-                segment
-        pathBuilder :: Builder (Record midput) (Record output) <-
-            pathRouter (Proxy :: _ path) path
-        pure $ segmentBuilder >>> pathBuilder
+    pathRouter _ (segmentToCapture : path) =
+        segmentToCapture # segmentToString # (fromComponent :: _ -> _ _ value) # bimap
+            (\message -> inj (Proxy :: _ "pathError") $ CaptureError
+                { segmentName: reflectSymbol (Proxy :: _ name)
+                , errorMessage: message
+                , actualSegment: segmentToCapture
+                })
+            (Tuple path <<< insert (Proxy :: _ name))
+
+instance
+    ( PathRouter leftPath input midput
+    , PathRouter rightPath midput output
+    ) =>
+    PathRouter (Sub leftPath rightPath) input output where
+    pathRouter _ path = let
+        leftProxy = (Proxy :: _ leftPath)
+        rightProxy = (Proxy :: _ rightPath)
+        in do
+        Tuple leftPath leftBuilder <- pathRouter leftProxy path
+        Tuple rightPath rightBuilder <- pathRouter rightProxy leftPath
+        pure $ Tuple rightPath $ leftBuilder >>> rightBuilder
