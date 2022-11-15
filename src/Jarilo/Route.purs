@@ -1,11 +1,4 @@
-module Jarilo.Route
-  ( FullRoute
-  , Route
-  , RouteErrors
-  , class RouteRouter
-  , routeRouter
-  )
-  where
+module Jarilo.Route where
 
 import Prelude
 
@@ -18,6 +11,7 @@ import Data.Variant (Variant, inj)
 import Jarilo.Method (class MethodRouter, Method, MethodError, methodRouter)
 import Jarilo.Path (class PathRouter, Path, PathError(..), pathRouter)
 import Jarilo.Query (class QueryRouter, Query, QueryError, queryRouter)
+import Jarilo.Response (Response)
 import Record.Builder (build)
 import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
@@ -25,7 +19,7 @@ import URI.Path.Segment (PathSegment)
 
 foreign import data Route :: Type
 
-foreign import data FullRoute :: Method -> Path -> Query -> Route
+foreign import data FullRoute :: Method -> Path -> Query -> Response -> Route
 
 type RouteErrors =
     ( methodError :: MethodError
@@ -46,7 +40,7 @@ instance
     , PathRouter path () midput
     , QueryRouter query midput fields
     ) =>
-    RouteRouter (FullRoute method path query) fields where
+    RouteRouter (FullRoute method path query responses) fields where
     routeRouter _ method path query = let
         methodProxy = (Proxy :: _ method)
         pathProxy = (Proxy :: _ path)

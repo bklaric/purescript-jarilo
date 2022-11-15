@@ -18,11 +18,11 @@ foreign import data Head :: Method
 
 foreign import data Get :: Method
 
-foreign import data Post :: Method
+foreign import data Post :: Type -> Method
 
-foreign import data Put :: Method
+foreign import data Put :: Type -> Method
 
-foreign import data Patch :: Method
+foreign import data Patch :: Type -> Method
 
 foreign import data Delete :: Method
 
@@ -64,13 +64,13 @@ instance MethodRouter Head where
 instance MethodRouter Get where
     methodRouter _ actual = checkMethod (Right HM.GET) actual
 
-instance MethodRouter Post where
+instance MethodRouter (Post request) where
     methodRouter _ actual = checkMethod (Right HM.POST) actual
 
-instance MethodRouter Put where
+instance MethodRouter (Put request) where
     methodRouter _ actual = checkMethod (Right HM.PUT) actual
 
-instance MethodRouter Patch where
+instance MethodRouter (Patch request) where
     methodRouter _ actual = checkMethod (Right HM.PATCH) actual
 
 instance MethodRouter Delete where

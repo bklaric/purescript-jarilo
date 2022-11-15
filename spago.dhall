@@ -26,8 +26,10 @@ to generate this file without the comments in this block.
   , "record"
   , "strings"
   , "tuples"
+  , "unsafe-coerce"
   , "uri"
   , "variant"
+  , "yoga-json"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
