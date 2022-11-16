@@ -1,4 +1,4 @@
-module Jarilo.Query.QueryPairs where
+module Jarilo.Shared.QueryPairs where
 
 import Prelude
 

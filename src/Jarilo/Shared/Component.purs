@@ -1,4 +1,4 @@
-module Jarilo.Component where
+module Jarilo.Shared.Component where
 
 import Prelude
 
