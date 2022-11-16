@@ -1,4 +1,4 @@
-module Jarilo.FromComponent where
+module Jarilo.Component where
 
 import Prelude
 
@@ -8,22 +8,28 @@ import Data.String (toLower)
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 
-class FromComponent value where
+class Component value where
     fromComponent :: String -> Either String value
+    toComponent :: value -> String
 
-instance FromComponent String where
+instance Component String where
     fromComponent = pure
+    toComponent = identity
 
-instance FromComponent Int where
+
+instance Component Int where
     fromComponent =
         Int.fromString >>> note "Couldn't turn component into an integer."
+    toComponent = show
 
-instance FromComponent Boolean where
+instance Component Boolean where
     fromComponent = toLower >>>
         case _ of
         "true" -> Right true
         "false" -> Right false
         _ -> Left "Couldn't turn component into a boolean."
+    toComponent = show
 
-instance FromComponent NonEmptyString where
+instance Component NonEmptyString where
     fromComponent = NonEmptyString.fromString >>> note "Component cannot be empty."
+    toComponent = NonEmptyString.toString

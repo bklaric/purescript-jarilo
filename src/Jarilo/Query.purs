@@ -12,7 +12,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(Tuple), snd)
 import Data.Variant (Variant, inj)
-import Jarilo.FromComponent (class FromComponent, fromComponent)
+import Jarilo.Component (class Component, fromComponent)
 import Jarilo.Query.QueryPairs (delete, find, findAll)
 import Prim.Row (class Cons, class Lacks)
 import Record.Builder (Builder, insert)
@@ -60,10 +60,10 @@ parameterParseError nameProxy actualValue errorMessage =
     , actualValue: actualValue
     }
 
-fromValue :: forall value. FromComponent value => Value -> Either String value
+fromValue :: forall value. Component value => Value -> Either String value
 fromValue = valueToString >>> fromComponent
 
-fromValue' :: forall value. FromComponent value =>
+fromValue' :: forall value. Component value =>
     Value -> Either { error :: String, value :: Value } value
 fromValue' value = valueToString value # fromComponent # lmap { error: _, value }
 
@@ -84,7 +84,7 @@ instance QueryRouter NoQuery input input where
 
 instance
     ( IsSymbol name
-    , FromComponent result
+    , Component result
     , Lacks name input
     , Cons name (Maybe result) input output
     ) => QueryRouter (Optional name result) input output where
@@ -102,7 +102,7 @@ instance
 
 instance
     ( IsSymbol name
-    , FromComponent result
+    , Component result
     , Lacks name input
     , Cons name result input output
     ) => QueryRouter (Mandatory name result) input output where
@@ -124,7 +124,7 @@ instance
 
 instance
     ( IsSymbol name
-    , FromComponent result
+    , Component result
     , Lacks name input
     , Cons name (Array result) input output
     ) => QueryRouter (Many name result) input output where

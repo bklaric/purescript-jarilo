@@ -10,7 +10,7 @@ import Data.Show.Generic (genericShow)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj)
-import Jarilo.FromComponent (class FromComponent, fromComponent)
+import Jarilo.Component (class Component, fromComponent)
 import Prim.Row (class Cons, class Lacks)
 import Record.Builder (Builder, insert)
 import Type.Proxy (Proxy(..))
@@ -83,7 +83,7 @@ instance
     ( IsSymbol name
     , Lacks name input
     , Cons name value input output
-    , FromComponent value
+    , Component value
     ) =>
     PathRouter (Capture name value) input output where
     pathRouter _ Nil =
