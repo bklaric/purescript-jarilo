@@ -102,4 +102,63 @@ let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.15.2-20220610/packages.dhall
         sha256:348212b7c79da7d343bed71b48ed164d426f1977f92196babac49bd560b32e75
 
-in  upstream
+let additions =
+    { jarilo =
+        { dependencies = [ "http-methods", "uri", "variant", "record" ]
+        , repo = "ssh://git@github.com/bklaric/purescript-jarilo.git"
+        , version = "v2.0.0-rc1"
+        }
+    , undefined =
+        { dependencies = [] : List Text
+        , repo = "ssh://git@github.com/bklaric/purescript-undefined.git"
+        , version = "v2.0.0"
+        }
+    , error =
+        { dependencies = [] : List Text
+        , repo = "ssh://git@github.com/bklaric/purescript-error.git"
+        , version = "v2.0.0"
+        }
+    , nodey =
+        { dependencies =
+            [ "arrays"
+            , "console"
+            , "effect"
+            , "either"
+            , "error"
+            , "foreign"
+            , "foreign-object"
+            , "lists"
+            , "maybe"
+            , "nullable"
+            , "prelude"
+            , "refs"
+            , "transformers"
+            , "undefined"
+            , "unsafe-coerce"
+            ]
+        , repo = "ssh://git@github.com/bklaric/purescript-nodey.git"
+        , version = "v1.0.3"
+        }
+    , pg =
+        { dependencies =
+            [ "arrays"
+            , "control"
+            , "effect"
+            , "either"
+            , "error"
+            , "foreign"
+            , "maybe"
+            , "nodey"
+            , "nullable"
+            , "options"
+            , "prelude"
+            , "transformers"
+            , "unsafe-coerce"
+            , "yoga-json"
+            ]
+        , repo = "ssh://git@github.com/bklaric/purescript-pg.git"
+        , version = "v1.0.1"
+        }
+    }
+
+in additions // upstream

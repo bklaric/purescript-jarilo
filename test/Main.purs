@@ -24,6 +24,7 @@ import Jarilo.Router.Route (RouteErrors)
 import Prim.Row (class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Record.Builder (Builder, build, insert)
+import Test.Fetch (fetchTests, requestUrlPathTest, requestUrlQueryTest)
 import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (QueryPairs(..))
 import URI.Path.Segment (unsafeSegmentFromString)
@@ -168,3 +169,4 @@ main = do
     log $ unsafeCoerce $ build (prepareReadResponse (Proxy :: _ RegisterPlayer)) {}
     -- log $ show $ writeJSON $ readResponse (Proxy :: _ RegisterPlayer) (inj (Proxy :: _ "badRequest") (Just """{ "error": "haha" }""")) -- $ writeResponse (Proxy :: _ RegisterPlayer) (inj (Proxy :: _ "badRequest") {error: "oh no"})
     log test2
+    fetchTests
