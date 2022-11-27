@@ -5,9 +5,7 @@ import Prelude
 import Data.Array (catMaybes)
 import Data.Bifunctor (bimap, lmap)
 import Data.Either (Either(..))
-import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
-import Data.Show.Generic (genericShow)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(Tuple), snd)
@@ -20,26 +18,22 @@ import Record.Builder (Builder, insert)
 import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (Key, QueryPairs(..), Value, keyFromString, valueToString)
 
-data QueryError
-    = MissingParameterError
+type QueryError = Variant
+    ( missingParameter ::
         { parameterName :: String
         , query :: QueryPairs Key Value
         }
-    | ParameterParseError
+    , parameterParse ::
         { parameterName :: String
         , errorMessage :: String
         , actualValue :: Value
         }
+    )
 
-derive instance Generic QueryError _
-
-instance Show QueryError where
-    show = genericShow
-
-parameterParseError :: forall parameterName errors. IsSymbol parameterName =>
-    Proxy parameterName -> Value -> String -> Variant (queryError :: QueryError | errors)
+parameterParseError :: forall parameterName. IsSymbol parameterName =>
+    Proxy parameterName -> Value -> String -> QueryError
 parameterParseError nameProxy actualValue errorMessage =
-    inj (Proxy :: _ "queryError") $ ParameterParseError
+    inj (Proxy :: _ "parameterParse")
     { parameterName: reflectSymbol nameProxy
     , errorMessage: errorMessage
     , actualValue: actualValue
@@ -55,11 +49,10 @@ fromValue' value = valueToString value # fromComponent # lmap { error: _, value 
 class QueryRouter (query :: Query) (input :: Row Type) (output :: Row Type)
     | query -> input output where
     queryRouter
-        :: forall errors
-        .  Proxy query
+        :: Proxy query
         -> QueryPairs Key Value
         -> Either
-            (Variant (queryError :: QueryError | errors))
+            QueryError
             (Tuple
                 (QueryPairs Key Value)
                 (Builder (Record input) (Record output)))
@@ -95,8 +88,7 @@ instance
         nameProxy = (Proxy :: _ name)
         newQuery = delete (keyFromString $ reflectSymbol nameProxy) query
         missingParameterError = Left
-            $ inj (Proxy :: _ "queryError")
-            $ MissingParameterError
+            $ inj (Proxy :: _ "missingParameter")
             { parameterName: reflectSymbol nameProxy, query: query }
         in
         Tuple newQuery <$>
@@ -143,3 +135,9 @@ instance
     ) => QueryRouter (Rest name) input output where
     queryRouter _ query =
         pure $ Tuple (QueryPairs []) (insert (Proxy :: _ name) query)
+
+queryRouter' :: forall input output query. QueryRouter query input output =>
+    Proxy query -> QueryPairs Key Value -> Either QueryError (Builder (Record input) (Record output))
+queryRouter' proxy query = do
+    Tuple _ builder <- queryRouter proxy query
+    Right builder

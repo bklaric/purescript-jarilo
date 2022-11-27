@@ -2,52 +2,57 @@ module Jarilo.Router.Route where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.HTTP.Method (CustomMethod, Method) as HM
-import Data.List (List(..))
-import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
+import Data.List (List)
 import Data.Variant (Variant, inj)
 import Jarilo.Route (FullRoute, Route)
 import Jarilo.Router.Method (class MethodRouter, MethodError, methodRouter)
-import Jarilo.Router.Path (class PathRouter, PathError(..), pathRouter)
-import Jarilo.Router.Query (class QueryRouter, QueryError, queryRouter)
+import Jarilo.Router.Path (class PathRouter, PathError, pathRouter')
+import Jarilo.Router.Query (class QueryRouter, QueryError, queryRouter')
 import Record.Builder (build)
 import Type.Proxy (Proxy(..))
 import URI.Extra.QueryPairs (Key, QueryPairs, Value)
 import URI.Path.Segment (PathSegment)
 
-type RouteErrors =
+type RouteError = Variant
     ( methodError :: MethodError
     , pathError :: PathError
     , queryError :: QueryError
     )
 
-class RouteRouter (route :: Route) (fields :: Row Type) | route -> fields where
+type RouteResult pathParameters queryParameters body =
+    { path :: Record pathParameters
+    , query :: Record queryParameters
+    , body :: body
+    }
+
+class RouteRouter (route :: Route) pathParameters queryParameters body | route -> pathParameters queryParameters body where
     routeRouter
         :: Proxy route
         -> Either HM.CustomMethod HM.Method
         -> List PathSegment
         -> QueryPairs Key Value
-        -> Either (Variant RouteErrors) (Record fields)
+        -> String
+        -> Either RouteError (RouteResult pathParameters queryParameters body)
 
 instance
-    ( MethodRouter method
-    , PathRouter path () midput
-    , QueryRouter query midput fields
+    ( MethodRouter method body
+    , PathRouter path () pathParameters
+    , QueryRouter query () queryParameters
     ) =>
-    RouteRouter (FullRoute method path query responses) fields where
-    routeRouter _ method path query = let
+    RouteRouter (FullRoute method path query responses) pathParameters queryParameters body where
+    routeRouter _ method path query body' = let
         methodProxy = (Proxy :: _ method)
         pathProxy = (Proxy :: _ path)
         queryProxy = (Proxy :: _ query)
-        in
-        case methodRouter methodProxy method of
-        Just methodError -> Left methodError
-        Nothing -> do
-            Tuple restOfPath pathBuilder <- pathRouter pathProxy path
-            case restOfPath of
-                Nil -> do
-                    Tuple _ queryBuilder <- queryRouter queryProxy query
-                    pure $ build (pathBuilder >>> queryBuilder) {}
-                _ -> Left $ inj (Proxy :: _ "pathError") $ NotEndError { restOfPath }
+        in do
+        body <- methodRouter methodProxy method body' # lmap (inj (Proxy :: _ "methodError"))
+        pathBuilder <- pathRouter' pathProxy path # lmap (inj (Proxy :: _ "pathError"))
+        queryBuilder <- queryRouter' queryProxy query # lmap (inj (Proxy :: _ "queryError"))
+        pure {
+            path: build pathBuilder {},
+            query: build queryBuilder {},
+            body
+        }
