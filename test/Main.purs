@@ -20,7 +20,7 @@ import Jarilo.Query (type (:?), Mandatory, NoQuery, Optional)
 import Jarilo.Response (type (:!), BadRequest, Internal_, Ok)
 import Jarilo.Route (FullRoute, Route)
 import Jarilo.Router.Junction (router)
-import Jarilo.Router.Route (RouteErrors)
+import Jarilo.Router.Route (RouteError, RouteResult)
 import Prim.Row (class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Record.Builder (Builder, build, insert)
@@ -50,27 +50,27 @@ type PlayerRoutes
 
 junction :: forall t166.
     Either
-        { viewPlayers :: Variant RouteErrors
-        , viewPlayer :: Variant RouteErrors
-        , registerPlayer :: Variant RouteErrors
+        { viewPlayers :: RouteError
+        , viewPlayer :: RouteError
+        , registerPlayer :: RouteError
         }
         (Variant
-            ( registerPlayer :: {}
-            , viewPlayer :: { nickname :: NonEmptyString }
-            , viewPlayers :: { teamId :: Int, game :: Maybe NonEmptyString }
+            ( registerPlayer :: RouteResult () () { content :: String }
+            , viewPlayer :: RouteResult (nickname :: NonEmptyString) () Unit
+            , viewPlayers :: RouteResult () (teamId :: Int, game :: Maybe NonEmptyString) Unit
             | t166
             )
         )
 junction =
-    router (Proxy :: _ PlayerRoutes) (Right POST) (unsafeSegmentFromString "players" : List.Nil) (QueryPairs [])
+    router (Proxy :: _ PlayerRoutes) (Right POST) (unsafeSegmentFromString "players" : List.Nil) (QueryPairs []) """{"content": "huehue"}"""
 
 wut :: String
 wut = case hush junction of
     Nothing -> "nothing"
     Just routeValues -> match
-        { registerPlayer: \{} -> "register player"
-        , viewPlayer: \{ nickname } -> "view player " <> show nickname
-        , viewPlayers: \{ teamId, game } -> "viewPlayers " <> show teamId <> " " <> show game
+        { registerPlayer: \_ -> "register player"
+        , viewPlayer: \{ path: { nickname } } -> "view player " <> show nickname
+        , viewPlayers: \{ query: { teamId, game } } -> "viewPlayers " <> show teamId <> " " <> show game
         }
         routeValues
 
